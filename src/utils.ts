@@ -1,8 +1,8 @@
 import * as core from '@actions/core'
-import * as fs from 'fs'
 import normalize from 'normalize-path'
-import * as os from 'os'
-import * as path from 'path'
+import * as fs from 'node:fs'
+import * as path from 'node:path'
+import * as os from 'node:os'
 
 export interface Platform {
   /** Godot installation filename suffix. */
@@ -33,14 +33,34 @@ export class Linux implements Platform {
     '.local/share/godot'
   )
 
+  private readonly arch: string
+
+  constructor(osArch: ReturnType<typeof os.arch>) {
+    // According to: https://github.com/godotengine/godot-builds/releases
+    const toGodotArchMapping: Record<string, string | undefined> = {
+      arm64: 'arm64',
+      x64: 'x86_64'
+    }
+
+    const mappedArch = toGodotArchMapping[osArch]
+
+    if (mappedArch === undefined) {
+      throw new Error(
+        `⛔Unsupported Linux arch: ${osArch}, supported: arm64, x64`
+      )
+    }
+
+    this.arch = mappedArch
+  }
+
   godotFilenameSuffix(useDotnet: boolean): string {
     if (useDotnet) {
-      return '_mono_linux_x86_64'
+      return `_mono_linux_${this.arch}`
     }
-    return '_linux.x86_64'
+    return `_linux.${this.arch}`
   }
   isGodotExecutable(basename: string): boolean {
-    return basename.toLowerCase().endsWith('x86_64')
+    return basename.toLowerCase().endsWith(this.arch)
   }
   getUnzippedPath(
     installationDir: string,
@@ -56,14 +76,34 @@ export class Windows implements Platform {
     path.join(os.homedir(), '\\AppData\\Roaming\\Godot')
   )
 
+  private readonly arch: string
+
+  constructor(osArch: ReturnType<typeof os.arch>) {
+    // According to: https://github.com/godotengine/godot-builds/releases
+    const toGodotArchMapping: Record<string, string | undefined> = {
+      arm64: 'windows_arm64',
+      x64: 'win64'
+    }
+
+    const mappedArch = toGodotArchMapping[osArch]
+
+    if (mappedArch === undefined) {
+      throw new Error(
+        `⛔Unsupported Windows arch: ${osArch}, supported: arm64, x64`
+      )
+    }
+
+    this.arch = mappedArch
+  }
+
   godotFilenameSuffix(useDotnet: boolean): string {
     if (useDotnet) {
-      return '_mono_win64'
+      return `_mono_${this.arch}`
     }
-    return '_win64.exe'
+    return `_${this.arch}.exe`
   }
   isGodotExecutable(basename: string): boolean {
-    return basename.toLowerCase().endsWith('_win64.exe')
+    return basename.toLowerCase().endsWith(`_${this.arch}.exe`)
   }
   getUnzippedPath(
     installationDir: string,
@@ -249,14 +289,14 @@ export function getGodotFilenameFromVersionString(
   return getGodotFilename(parseVersion(versionString), platform, useDotnet)
 }
 
-export function getPlatform(processPlatform: NodeJS.Platform): Platform {
+export function getPlatform(processPlatform: NodeJS.Platform, arch = os.arch()): Platform {
   switch (processPlatform) {
     case 'linux':
       core.info('🐧 Running on Linux')
-      return new Linux()
+      return new Linux(arch)
     case 'win32':
       core.info('⧉ Running on Windows')
-      return new Windows()
+      return new Windows(arch)
     case 'darwin':
       core.info('🍏 Running on macOS')
       return new MacOS()
@@ -285,7 +325,7 @@ export async function findExecutablesRecursively(
     } else {
       // Test if file is executable. GodotSharp.dll is always considered an
       // executable.
-      let isExecutable = file.name === 'GodotSharp.dll' ? true : false
+      let isExecutable = file.name === 'GodotSharp.dll'
       if (!isExecutable) {
         if (platform instanceof Windows) {
           // fs.constants.X_OK doesn't seem to work on Windows.

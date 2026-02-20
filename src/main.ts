@@ -300,7 +300,7 @@ async function run(platform: Platform): Promise<void> {
     // `fs.linkSync` has some issues on macOS for Godot executable
     // it does not create symlink at all, it copies whole file
     // and corrupts it a way that Godot gets killed by kernel (Killed: 9)
-    if (process.platform === "darwin") {
+    if (process.platform === 'darwin') {
       child_process.execSync(`ln -s "${godotExecutable}" "${godotAlias}"`)
     } else {
       fs.linkSync(godotExecutable, godotAlias)
@@ -332,4 +332,4 @@ async function run(platform: Platform): Promise<void> {
   }
 }
 
-run(getPlatform(process.platform))
+void run(getPlatform(process.platform))
