@@ -332,4 +332,4 @@ async function run(platform: Platform): Promise<void> {
   }
 }
 
-await run(getPlatform(process.platform))
+run(getPlatform(process.platform))

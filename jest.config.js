@@ -1,18 +1,10 @@
 /** @type {import('jest').Config} */
-const config = {
+module.exports = {
   clearMocks: true,
   moduleFileExtensions: ['js', 'ts'],
   testMatch: ['**/*.test.ts'],
-  preset: 'ts-jest/presets/default-esm',
   transform: {
-    '^.+\\.ts$': [
-      'ts-jest',
-      {
-        useESM: true,
-      },
-    ],
+    '^.+\\.ts$': 'ts-jest'
   },
   verbose: true
-};
-
-export default config;
+}

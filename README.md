@@ -14,6 +14,7 @@ Setup Godot for use with (or without) .NET on macOS, Windows, and Linux CI/CD ru
 - ✅ Runs on macOS Github Actions runner.
 - ✅ Runs on Windows Github Actions runner.
 - ✅ Runs on Ubuntu Github Actions runner.
+- ✅ Runs on amd64 or arm64 Actions runner.
 
 > **Godot 3.x and below are not supported.**
 
@@ -34,6 +35,8 @@ jobs:
       fail-fast: false
       matrix:
         # Put the operating systems you want to run on here.
+        # You can choose arm64 based runners too!
+        # See: https://github.com/pricing/calculator
         os: [ubuntu-latest, macos-latest, windows-latest]
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: true
@@ -46,17 +49,20 @@ jobs:
         # Use bash shells on all platforms.
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         name: 🧾 Checkout
         # Disable fetching history as most of the time it is useless
         filter: tree:0
         fetch-depth: 0
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v5
         name: 💽 Setup .NET SDK
         with:
           # Use the .NET SDK from global.json in the root of the repository.
           global-json-file: global.json
+          # Enable packages cache
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
 
       - name: 📦 Restore Dependencies
         run: dotnet restore
